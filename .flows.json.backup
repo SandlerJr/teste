@@ -1,0 +1,310 @@
+[
+    {
+        "id": "0c2bc0114047079b",
+        "type": "tab",
+        "label": "Flow 1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "18c52c42b44a6fc6",
+        "type": "http in",
+        "z": "0c2bc0114047079b",
+        "name": "",
+        "url": "/catalogo-corretoras",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 190,
+        "y": 60,
+        "wires": [
+            [
+                "9711ee2ab16e63c8"
+            ]
+        ]
+    },
+    {
+        "id": "3a78bc6219c70abb",
+        "type": "http response",
+        "z": "0c2bc0114047079b",
+        "name": "Resposta Catálogo de Corretoras",
+        "statusCode": "200",
+        "headers": {},
+        "x": 1240,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "9711ee2ab16e63c8",
+        "type": "http request",
+        "z": "0c2bc0114047079b",
+        "name": "",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "https://brasilapi.com.br/api/cvm/corretoras/v1",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 410,
+        "y": 60,
+        "wires": [
+            [
+                "a91fb34d43fff87e"
+            ]
+        ]
+    },
+    {
+        "id": "a91fb34d43fff87e",
+        "type": "function",
+        "z": "0c2bc0114047079b",
+        "name": "Formatar Dados de Corretoras",
+        "func": "// Verifica se a resposta da API contém corretoras\nif (!Array.isArray(msg.payload)) {\n    node.error(\"Resposta inesperada da API: Esperado um array de corretoras.\");\n    return null;\n}\n\nvar corretoras = msg.payload;\nvar result = \"\";\n\n// Itera sobre cada corretora e formata a string conforme solicitado\ncorretoras.forEach(function(corretora) {\n    // Acessa os campos da corretora\n    var nome = corretora.nome || \"Nome indisponível\";\n    var cidade = corretora.cidade || \"Cidade indisponível\";\n    var cnpj = corretora.cnpj || \"CNPJ indisponível\";\n    \n    // Concatena o resultado no formato: Nome - Cidade / CNPJ\n    result += nome + \" - \" + cidade + \" / \" + cnpj + \"<br>\";\n});\n\n// Define o payload final como o HTML formatado\nmsg.payload = result;\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 650,
+        "y": 60,
+        "wires": [
+            [
+                "de35c177a589e0c6"
+            ]
+        ]
+    },
+    {
+        "id": "a8eb9fb2d33d9b78",
+        "type": "http in",
+        "z": "0c2bc0114047079b",
+        "name": "",
+        "url": "/cepURL/:cep",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 170,
+        "y": 180,
+        "wires": [
+            [
+                "93b1f0366c01b866"
+            ]
+        ]
+    },
+    {
+        "id": "93b1f0366c01b866",
+        "type": "http request",
+        "z": "0c2bc0114047079b",
+        "name": "",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "https://brasilapi.com.br/api/cep/v2/{{{req.params.cep}}}",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 370,
+        "y": 180,
+        "wires": [
+            [
+                "ed3bfd57f43b47c8"
+            ]
+        ]
+    },
+    {
+        "id": "ed3bfd57f43b47c8",
+        "type": "function",
+        "z": "0c2bc0114047079b",
+        "name": "Formatar respostas corretoras 2",
+        "func": "// Verifica se a resposta da API tem dados\nif (msg.payload && msg.payload.cep) {\n    const dados = msg.payload;\n    msg.payload = `\n        <h1>Detalhes do CEP: ${dados.cep}</h1>\n        <p><strong>Logradouro:</strong> ${dados.street}</p>\n        <p><strong>Bairro:</strong> ${dados.neighborhood}</p>\n        <p><strong>Cidade:</strong> ${dados.city}</p>\n        <p><strong>Estado:</strong> ${dados.state}</p>\n    `;\n} else {\n    msg.payload = `<h1>Erro ao buscar detalhes do CEP.</h1>`;\n}\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 610,
+        "y": 180,
+        "wires": [
+            [
+                "8e4186d370e3f5c5"
+            ]
+        ]
+    },
+    {
+        "id": "8e4186d370e3f5c5",
+        "type": "template",
+        "z": "0c2bc0114047079b",
+        "name": "Apresentação da corretora pelo CEP na URL",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "<html>\n<head>\n    <title>Buscador de CEP</title>\n    <link rel=\"stylesheet\" href=\"https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css\">\n    <style>\n        body {\n            padding: 20px;\n            font-family: Arial, sans-serif;\n        }\n        h1 {\n            color: #007bff; /* Cor do título */\n        }\n        p {\n            font-size: 16px; /* Tamanho da fonte dos parágrafos */\n        }\n    </style>\n</head>\n<body>\n    {{{payload}}}\n</body>\n</html>\n",
+        "output": "str",
+        "x": 950,
+        "y": 180,
+        "wires": [
+            [
+                "203fbf96af4cc444"
+            ]
+        ]
+    },
+    {
+        "id": "203fbf96af4cc444",
+        "type": "http response",
+        "z": "0c2bc0114047079b",
+        "name": "Resposta de Busca do CEP na URL",
+        "statusCode": "",
+        "headers": {},
+        "x": 1310,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "24c37e4b80cdc833",
+        "type": "http in",
+        "z": "0c2bc0114047079b",
+        "name": "",
+        "url": "/buscar-cep",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 160,
+        "y": 300,
+        "wires": [
+            [
+                "16107db10002dde2"
+            ]
+        ]
+    },
+    {
+        "id": "16107db10002dde2",
+        "type": "template",
+        "z": "0c2bc0114047079b",
+        "name": "Apresentação do campo de busca",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "<html>\n<head>\n    <title>Buscador de CEP</title>\n    <link rel=\"stylesheet\" href=\"https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css\">\n</head>\n<body>\n    <div class=\"container\">\n        <h1>Buscador de CEP</h1>\n        <form action=\"/cep\" method=\"POST\">\n            <div class=\"form-group\">\n                <label for=\"cep\">Insira o CEP:</label>\n                <input type=\"text\" class=\"form-control\" id=\"cep\" name=\"cep\" required>\n            </div>\n            <button type=\"submit\" class=\"btn btn-primary\">Buscar</button>\n        </form>\n    </div>\n</body>\n</html>\n",
+        "output": "str",
+        "x": 420,
+        "y": 300,
+        "wires": [
+            [
+                "b1b2c7ba450b337f"
+            ]
+        ]
+    },
+    {
+        "id": "b1b2c7ba450b337f",
+        "type": "http response",
+        "z": "0c2bc0114047079b",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 650,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "4cd6dbc2fe7e8232",
+        "type": "http in",
+        "z": "0c2bc0114047079b",
+        "name": "",
+        "url": "/cep",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 140,
+        "y": 360,
+        "wires": [
+            [
+                "ad5fd00ade7538a3"
+            ]
+        ]
+    },
+    {
+        "id": "0f4eb1957b2fedcd",
+        "type": "template",
+        "z": "0c2bc0114047079b",
+        "name": "Apresentação da corretora ",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "<html>\n<head>\n    <title>Resultado do CEP</title>\n    <link rel=\"stylesheet\" href=\"https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css\">\n</head>\n<body>\n    <div class=\"container\">\n        <h1>Detalhes do CEP</h1>\n        <p><strong>Logradouro:</strong> {{payload.street}}</p>\n        <p><strong>Bairro:</strong> {{payload.neighborhood}}</p>\n        <p><strong>Cidade:</strong> {{payload.city}}</p>\n        <p><strong>Estado:</strong> {{payload.state}}</p>\n        <a href=\"/buscar-cep\" class=\"btn btn-secondary\">Voltar</a>\n    </div>\n</body>\n</html>\n",
+        "output": "str",
+        "x": 540,
+        "y": 360,
+        "wires": [
+            [
+                "d7ad217e72cd58be"
+            ]
+        ]
+    },
+    {
+        "id": "d7ad217e72cd58be",
+        "type": "http response",
+        "z": "0c2bc0114047079b",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 750,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "ad5fd00ade7538a3",
+        "type": "http request",
+        "z": "0c2bc0114047079b",
+        "name": "",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "https://brasilapi.com.br/api/cep/v2/{{payload.cep}}",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 310,
+        "y": 360,
+        "wires": [
+            [
+                "0f4eb1957b2fedcd"
+            ]
+        ]
+    },
+    {
+        "id": "de35c177a589e0c6",
+        "type": "template",
+        "z": "0c2bc0114047079b",
+        "name": "Apresentação das Corretoras",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "<html>\n<head>\n    <title>Catálogo de Corretoras</title>\n    <style>\n        body {\n            font-family: Arial, sans-serif;\n            margin: 20px;\n        }\n        .corretora {\n            margin-bottom: 10px;\n            padding: 10px;\n            border: 1px solid #ddd;\n        }\n    </style>\n</head>\n<body>\n    <h1>Catálogo de Corretoras</h1>\n    <div id=\"corretoras\">\n        {{{payload}}}\n    </div>\n</body>\n</html>\n",
+        "output": "str",
+        "x": 940,
+        "y": 60,
+        "wires": [
+            [
+                "3a78bc6219c70abb"
+            ]
+        ]
+    }
+]
