@@ -35,4 +35,4 @@ Antes de executar a aplicação, verifique se você possui o seguinte instalado:
 
 1. Clone este repositório:
    ```bash
-   git clone https://github.com/seu_usuario/nome_do_repositorio.git
+   git clone https://github.com/SandlerJr/teste.git
